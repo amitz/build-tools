@@ -261,7 +261,7 @@ def _generate_pom_xml(ctx, maven_coordinates):
 
 def _assemble_maven_impl(ctx):
     target = ctx.attr.target
-    target_string = target[JavaLibInfo].target_coordinates.to_list()[0]
+    target_string = target[JavaLibInfo].target_coordinates.to_list()[-1]
 
     maven_coordinates = _parse_maven_coordinates(target_string)
 
