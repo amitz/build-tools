@@ -241,9 +241,18 @@ def _generate_pom_xml(ctx, maven_coordinates):
     inputs = [preprocessed_template, version_file]
 
     args = ctx.actions.args()
-    args.add('--template_file', preprocessed_template.path)
-    args.add('--version_file', version_file.path)
-    args.add('--pom_file', pom_file.path)
+    executable = None
+
+    # if Windows
+    if ctx.configuration.host_path_separator == ";":
+        args.add(ctx.file._pom_replace_version)
+        executable = "python"
+    else:
+        executable = ctx.file._pom_replace_version
+
+    args.add('--template_file={}'.format(preprocessed_template.path))
+    args.add('--version_file={}'.format(version_file.path))
+    args.add('--pom_file={}'.format(pom_file.path))
 
     if ctx.attr.workspace_refs:
         inputs.append(ctx.file.workspace_refs)
@@ -252,7 +261,7 @@ def _generate_pom_xml(ctx, maven_coordinates):
     # Step 2: fill in {pom_version} from version_file
     ctx.actions.run(
         inputs = inputs,
-        executable = ctx.file._pom_replace_version,
+        executable = executable,
         arguments = [args],
         outputs = [pom_file],
     )
@@ -281,7 +290,7 @@ def _assemble_maven_impl(ctx):
     else:
         fail("Could not find JAR file to deploy in {}".format(target))
 
-    output_jar = ctx.actions.declare_file("{}:{}.jar".format(maven_coordinates.group_id, maven_coordinates.artifact_id))
+    output_jar = ctx.actions.declare_file("{}-{}.jar".format(maven_coordinates.group_id, maven_coordinates.artifact_id))
 
     ctx.actions.run(
         inputs = [jar, pom_file],
